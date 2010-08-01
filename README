@@ -1,0 +1,12 @@
+Vimazing
+
+A maze generator for practising hjkl in Vim.
+
+Run:
+
+:Vimazing
+
+and navigate the maze!
+
+NOTE: This is massively pre-alpha - placed here in the public at this infant
+stage only so eager adopters can play. You know who you are. :)
