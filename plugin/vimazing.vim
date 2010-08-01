@@ -17,6 +17,15 @@
 " ============================================================================
 let s:Vimazing_version = '0.0.0'  " alpha, unreleased
 
+" TODO
+" Fixed the off-by-one bug (I believe), but now I have a silly situation where
+" the first path does NOT extend for as long as it can. So, the next thing to
+" do is figure out why that is happening.
+" After that, pick (and remove) a random place in the maze.opened_cells list
+" and start the path crawling again. Lather, Rinse, Repeat until opened_cells
+" is empty - and the maze is complete.
+" THEN, release to github as 0.0.1 - Day of Vimazement. :D
+
 " Vimscript setup {{{1
 let s:old_cpo = &cpo
 set cpo&vim
@@ -110,8 +119,9 @@ function! NewMaze(height, width)
   " Create a path through the maze to be followed
   function maze.MakePath() dict
     " pick a random cell inside the grid (not on the outside walls)
-    "let cell = ChooseStartingCell()
-    let self.cell = Cell(self.height - 2, self.width - 2) " XXX: TESTING
+    let self.cell = self.ChooseStartingCell()
+    echo self.cell
+    "let self.cell = Cell(self.height - 2, self.width - 2) " XXX: TESTING
     let result = 0
     while result != -1
       call self.OpenCell()
@@ -131,25 +141,18 @@ function! NewMaze(height, width)
   endfunction
 
   function maze.ValidInnerCell(cell) dict
-    " Rule A: x > 0 && x < (self.width - 1)
-    "         y > 0 && y < (self.height - 1)
-    " Rule B: No square with >1 open neighbour
-    "return (a:cell.h() > 0) && (a:cell.h() < (self.height - 1)) &&
-          "\ (a:cell.w() > 0) && (a:cell.w() < (self.width - 1)) &&
-          "\ (self.CountOpenNeighbours(a:cell) <= 2)
+    " Rule: x > 0 && x < (self.width - 1)
+    "       y > 0 && y < (self.height - 1)
+    " Rule B: No square with >1 open neighbour (checked elsewhere now)
     let rule_a = (a:cell.h() > 0) && (a:cell.h() < (self.height - 1)) &&
           \ (a:cell.w() > 0) && (a:cell.w() < (self.width - 1))
-    let rule_b = self.CountOpenNeighbours(a:cell) <= 1
-    if ! rule_a
-      echo "failed rule a: " . a:cell.h() . ',' . a:cell.w()
-    endif
-    if ! rule_b
-      echo "failed rule b: " . a:cell.h() . ',' . a:cell.w()
-    endif
-    return rule_a && rule_b
+    "" XXX Debugging:
+    "if ! rule_a
+      "echo "failed rule a: " . a:cell.h() . ',' . a:cell.w()
+    "endif
+    return rule_a
   endfunction
 
-  " TODO: AAaaargh! NOT WORKING!
   " Choose next cell to open along the path
   function maze.ChooseNextCell() dict
     " as always, the grid and cells within are accessed as [height,width]
@@ -160,12 +163,15 @@ function! NewMaze(height, width)
     while ! done && (len(tries) < 4)
       let tries[choice] = 1
       let newcell = copy(self.cell).add(neighbours[choice])
-      echo newcell
-      if self.ValidInnerCell(newcell)
+      if self.ValidInnerCell(newcell) && (self.CountOpenNeighbours(newcell) <= 1)
         let self.cell = newcell
         let done = 1
       else
         let choice = RandomNumber() % 4
+        while has_key(tries, choice)
+          "let choice = (choice + 1) % 4
+          let choice = RandomNumber() % 4
+        endwhile
       end
     endwhile
     if len(tries) == 4
@@ -185,7 +191,9 @@ function! NewMaze(height, width)
     let index = 0
     while index < 4
         let newcell = copy(a:cell).add(neighbours[index])
-        let cnt += (self.grid[newcell.h()][newcell.w()] == ' ' ? 1 : 0)
+        if self.ValidInnerCell(newcell)
+          let cnt += (self.grid[newcell.h()][newcell.w()] == ' ' ? 1 : 0)
+        endif
         let index += 1
     endwhile
     return cnt
@@ -264,4 +272,5 @@ command! -nargs=0 Vimazing call Vimazing()
 let &cpo = s:old_cpo
 
 " vim: set sw=2 sts=2 et fdm=marker:
+
 
