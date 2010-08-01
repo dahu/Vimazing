@@ -44,9 +44,9 @@ let b:m_z = localtime()
 " also... not sure of the wisdom of generating a full 32-bit RN here
 " and then using abs() on the sucker. But it'll do for now...
 function! RandomNumber()
-  let b:m_z = 36969 * b:m_z + (b:m_z / 16384)
-  let b:m_w = 18000 * b:m_w + (b:m_w / 16384)
-  return abs((b:m_z * 16384) + b:m_w)      " 32-bit result
+  let b:m_z = b:m_z + (b:m_z / 4)
+  let b:m_w = b:m_w + (b:m_w / 4)
+  return abs((b:m_z) + b:m_w)      " 32-bit result
 endfunction
 " end RNG }}}2
 
@@ -166,15 +166,18 @@ function! NewMaze(height, width)
       if self.ValidInnerCell(newcell) && (self.CountOpenNeighbours(newcell) <= 1)
         let self.cell = newcell
         let done = 1
-      else
+      elseif len(tries) < 4
         let choice = RandomNumber() % 4
         while has_key(tries, choice)
           "let choice = (choice + 1) % 4
           let choice = RandomNumber() % 4
         endwhile
+      else
+        let tries.end = 1
+        break
       end
     endwhile
-    if len(tries) == 4
+    if len(tries) == 5
       " no further steps can be taken along current path
       " XXX abort for now to test single path creation
       return -1
@@ -201,6 +204,7 @@ function! NewMaze(height, width)
 
   " print the grid, ready for playing
   function maze.Print()
+    call append('$',[''])
     call map(self.grid, "append('$', join(v:val, ''))")
   endfunction
 
