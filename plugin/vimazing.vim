@@ -15,15 +15,12 @@
 "
 " Licensed under the same terms as Vim itself.
 " ============================================================================
-let s:Vimazing_version = '0.0.0'  " alpha, unreleased
+let s:Vimazing_version = '0.0.1'  " alpha, unreleased
 
 " TODO
-" Fixed the off-by-one bug (I believe), but now I have a silly situation where
-" the first path does NOT extend for as long as it can. So, the next thing to
-" do is figure out why that is happening.
-" After that, pick (and remove) a random place in the maze.opened_cells list
-" and start the path crawling again. Lather, Rinse, Repeat until opened_cells
-" is empty - and the maze is complete.
+" Pick (and remove) a random place in the maze.opened_cells list and start the
+" path crawling again. Lather, Rinse, Repeat until opened_cells is empty - and
+" the maze is complete.
 " THEN, release to github as 0.0.1 - Day of Vimazement. :D
 
 " Vimscript setup {{{1
@@ -120,19 +117,51 @@ function! NewMaze(height, width)
   function maze.MakePath() dict
     " pick a random cell inside the grid (not on the outside walls)
     let self.cell = self.ChooseStartingCell()
-    echo self.cell
     "let self.cell = Cell(self.height - 2, self.width - 2) " XXX: TESTING
     let result = 0
-    while result != -1
-      call self.OpenCell()
+    call self.OpenCell()
+    while len(self.opened_cells) > 0
       let result = self.ChooseNextCell()
+      while result != -1
+        call self.OpenCell()
+        let result = self.ChooseNextCell()
+      endwhile
+      let self.cell = remove(self.opened_cells, 0)
+    endwhile
+  endfunction
+
+  " naive version to begin with - just crawls in from top-left corner for Start
+  " and back from bottom right corner for End
+  " TODO: Needs DRYing
+  function maze.StartAndEnd() dict
+    let cell = Cell(1, 1)
+    let done_start = 0
+    while ! done_start
+      if self.grid[cell.h()][cell.w()] == ' '
+        let self.grid[cell.h() - 1][cell.w()] = ' '
+        let done_start = 1
+      endif
+      call cell.add([0,1])
+    endwhile
+    let cell = Cell(self.height - 2, self.width - 2)
+    let done_end = 0
+    while ! done_end
+      if self.grid[cell.h()][cell.w()] == ' '
+        let self.grid[cell.h() + 1][cell.w()] = ' '
+        let done_end = 1
+      endif
+      call cell.add([0,-1])
     endwhile
   endfunction
 
   " Clear a single cell in the maze
-  function maze.OpenCell() dict
+  function maze.OpenCell(...) dict
+    let marker = ' '
+    if a:0 == 1
+      let marker = a:1
+    endif
     call add(self.opened_cells, self.cell)
-    let self.grid[self.cell.h()][self.cell.w()] = ' '
+    let self.grid[self.cell.h()][self.cell.w()] = marker
   endfunction
 
   " Pick a random internal (not along the walls) grid cell
@@ -148,7 +177,7 @@ function! NewMaze(height, width)
           \ (a:cell.w() > 0) && (a:cell.w() < (self.width - 1))
     "" XXX Debugging:
     "if ! rule_a
-      "echo "failed rule a: " . a:cell.h() . ',' . a:cell.w()
+    "echo "failed rule a: " . a:cell.h() . ',' . a:cell.w()
     "endif
     return rule_a
   endfunction
@@ -193,11 +222,11 @@ function! NewMaze(height, width)
     let neighbours = [[1,0], [0,-1], [-1,0], [0,1]]
     let index = 0
     while index < 4
-        let newcell = copy(a:cell).add(neighbours[index])
-        if self.ValidInnerCell(newcell)
-          let cnt += (self.grid[newcell.h()][newcell.w()] == ' ' ? 1 : 0)
-        endif
-        let index += 1
+      let newcell = copy(a:cell).add(neighbours[index])
+      if self.ValidInnerCell(newcell)
+        let cnt += (self.grid[newcell.h()][newcell.w()] == ' ' ? 1 : 0)
+      endif
+      let index += 1
     endwhile
     return cnt
   endfunction
@@ -264,6 +293,7 @@ function! Vimazing()
   let maze = NewMaze(b:maze_height, b:maze_width)
   call maze.Setup()
   call maze.MakePath()
+  call maze.StartAndEnd()
   call maze.Print()
 endfunction
 
@@ -277,4 +307,37 @@ let &cpo = s:old_cpo
 
 " vim: set sw=2 sts=2 et fdm=marker:
 
+finish
 
+#### #####
+####     #
+###  # # #
+##  #  # #
+#  # ##  #
+## #    ##
+#   ######
+# #     ##
+#  # ##  #
+######## #
+
+# ########
+#    #   #
+# # #  # #
+##    # ##
+#  ##    #
+##   ### #
+# ###    #
+# #   ####
+#   #    #
+######## #
+
+## #######
+##    #  #
+#  ## # ##
+# # # #  #
+# #    # #
+#  # ##  #
+# # #   ##
+#     #  #
+## ##  # #
+######## #
