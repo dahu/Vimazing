@@ -28,8 +28,10 @@ let s:old_cpo = &cpo
 set cpo&vim
 
 " Configuration Options {{{1
-let s:maze_width = 20
-let s:maze_height = s:maze_width / 2
+let s:size = 20
+let s:lifes = 3
+let s:time = 120
+
 "let s:maze_height = 10
 " Configuration Options }}}1
 " Support Classes {{{1
@@ -138,7 +140,7 @@ function! NewMaze(height, width)
     let done_start = 0
     while ! done_start
       if self.grid[cell.h()][cell.w()] == ' '
-        let self.grid[cell.h() - 1][cell.w()] = ' '
+        let self.grid[cell.h() - 1][cell.w()] = 'X'
         let done_start = 1
       endif
       call cell.add([0,1])
@@ -147,7 +149,7 @@ function! NewMaze(height, width)
     let done_end = 0
     while ! done_end
       if self.grid[cell.h()][cell.w()] == ' '
-        let self.grid[cell.h() + 1][cell.w()] = ' '
+        let self.grid[cell.h() + 1][cell.w()] = 'X'
         let done_end = 1
       endif
       call cell.add([0,-1])
@@ -284,9 +286,12 @@ function! NewVimaze()
   let vimaze = {}
 
   function vimaze.Setup(lifes, time, size) dict
-    let self.rules = {' ':'empty', '#':'wall'}
+    normal! ggVG"_d
+    call self.deactivate()
+    let self.rules = {'X':'door', ' ':'empty', '#':'wall', 'out':'out'}
     let self.lifes = a:lifes
-    let self.timer = a:time
+    let self.rem_time = a:time
+    let self.start_time = 0
     let self.maze = NewMaze(a:size, a:size * 2)
     call self.maze.Setup()
     call self.maze.MakePath()
@@ -294,12 +299,72 @@ function! NewVimaze()
     call self.maze.Print()
     call append(0,[''])
     call self.SetHeader(a:lifes, a:time)
+    call append(line('$'), ['Press "g" to start.'])
+    noremap g :call b:vimaze.activate()<CR>
   endfunction
 
-  function! vimaze.SetHeader(lifes, time) dict
-    call setline(1, 'Lifes: '.a:lifes.'   Timer: '.(a:time / 60).':'.(a:time % 60))
+  function vimaze.update()
+    let self.rem_time += self.start_time - localtime()
+    let self.start_time = localtime()
+    let key = getline('.')[col('.')-1]
+    let current = key == '' ? self.rules['out'] : self.rules[key]
+
+    if self.rem_time <= 0
+      call self.Setup(s:lifes, s:time, s:size)
+      echo 'You lost on time! Try again.'
+    elseif self.lifes <= 0
+      call self.Setup(s:lifes, s:time, s:size)
+      echo 'You lost all your lives! Try again.'
+    else
+      if current == 'door'
+        echo 'Start!'
+      elseif current == "empty"
+        echo 'Good!'
+      elseif current == 'wall'
+        let self.lifes -= 1
+        echo "Too bad! You hit the wall, start from the beginning :("
+        call setpos('.', [0,3,2,0])
+      elseif current == 'out'
+        echo "You should go the other way."
+        call setpos('.', [0,3,2,0])
+      else
+        echoe 'If you see this, the world']s about to end, save yourself!'
+      endif
+    endif
+    call b:vimaze.SetHeader(self.lifes, self.rem_time)
   endfunction
-  echom string(vimaze)
+
+  function vimaze.SetHeader(lifes, time) dict
+    call setline(1, 'Lifes: '.a:lifes.'   Timer: '.(a:time / 60).':'.(a:time % 60))
+    set nomodified
+  endfunction
+
+  function vimaze.activate() dict
+    call setpos('.', [0,3,2,0])
+    call setline(line('$'), 'Press <Esc> to stop.')
+    let self.start_time = localtime()
+    augroup Vimazing
+      au!
+      au CursorMoved,CursorHold * call b:vimaze.update()
+      au InsertEnter * silent normal! <Esc>
+    augroup END
+    noremap <Esc> :call b:vimaze.deactivate()<CR>
+    noremap j gj
+    noremap k gk
+  endfunction
+
+  function vimaze.deactivate() dict
+    silent echo line('$') > 4 ? setline(line('$'), 'Press "g" to start.') : line('.')
+    augroup Vimazing
+      au!
+    augroup END
+    unmap <Esc>
+  endfunction
+
+  function vimaze.resetcursor()
+    call setpos('.', [0,self.doors[0][0] + 1,self.doors[0][1] + 1,0])
+  endfunction
+
   return vimaze
 endfunction " end Vimaze class }}}1
 
@@ -314,18 +379,15 @@ endfunction " end Tests }}}1
 "
 " Public Interface {{{1
 function! Vimazing()
-  if &filetype == 'vimaze'
+  if &filetype == 'vimazing'
     normal! ggVGd
   else
     new
     only
-    set ft=vimaze
+    set ft=vimazing
   endif
   let b:vimaze = NewVimaze()
-  call b:vimaze.Setup(3,180,15)
-  "call b:vimaze.MakePath()
-  "call b:vimaze.StartAndEnd()
-  "call b:vimaze.Print()
+  call b:vimaze.Setup(s:lifes, s:time, s:size)
   set nomodified
 endfunction
 
