@@ -28,9 +28,9 @@ let s:old_cpo = &cpo
 set cpo&vim
 
 " Configuration Options {{{1
-let b:maze_width = 10
-"let b:maze_height = b:maze_width / 2
-let b:maze_height = 10
+let b:maze_width = 30
+let b:maze_height = b:maze_width / 2
+"let b:maze_height = 80
 " Configuration Options }}}1
 " Support Classes {{{1
 " George Marsaglia's Multiply-with-carry Random Number Generator {{{2
@@ -111,6 +111,15 @@ function! NewMaze(height, width)
     for n in repeat([0], self.height)
       call add(self.grid, repeat(['#'], self.width))
     endfor
+  endfunction
+
+  " ready to play
+  function maze.Start() dict
+    " the header stuff here is purely an example at this stage
+    call setline(1, '        -= Vimazing =-')
+    call setline(2, 'Lives: 3    Time remaining: 90')
+    call cursor(3,1)
+    call search(' ')
   endfunction
 
   " Create a path through the maze to be followed
@@ -294,10 +303,14 @@ function! Vimazing()
   call maze.Setup()
   call maze.MakePath()
   call maze.StartAndEnd()
+  new
   call maze.Print()
+  call maze.Start()
+  only
+  source syntax/vimazing.vim
 endfunction
 
-command! -nargs=0 Vimazing call Vimazing()
+command! -nargs=0 Vimazing call Vimazing(<args>)
 
 " end Public Interface }}}1
 "
@@ -309,35 +322,3 @@ let &cpo = s:old_cpo
 
 finish
 
-#### #####
-####     #
-###  # # #
-##  #  # #
-#  # ##  #
-## #    ##
-#   ######
-# #     ##
-#  # ##  #
-######## #
-
-# ########
-#    #   #
-# # #  # #
-##    # ##
-#  ##    #
-##   ### #
-# ###    #
-# #   ####
-#   #    #
-######## #
-
-## #######
-##    #  #
-#  ## # ##
-# # # #  #
-# #    # #
-#  # ##  #
-# # #   ##
-#     #  #
-## ##  # #
-######## #
