@@ -28,22 +28,22 @@ let s:old_cpo = &cpo
 set cpo&vim
 
 " Configuration Options {{{1
-let b:maze_width = 10
-"let b:maze_height = b:maze_width / 2
-let b:maze_height = 10
+let s:maze_width = 20
+let s:maze_height = s:maze_width / 2
+"let s:maze_height = 10
 " Configuration Options }}}1
 " Support Classes {{{1
 " George Marsaglia's Multiply-with-carry Random Number Generator {{{2
-let b:m_w = matchstr(tempname(), '\d\+') * getpid()
-let b:m_z = localtime()
+let s:m_w = matchstr(tempname(), '\d\+') * getpid()
+let s:m_z = localtime()
 
 " sledge hammer to crack a nut?
 " also... not sure of the wisdom of generating a full 32-bit RN here
 " and then using abs() on the sucker. But it'll do for now...
 function! RandomNumber()
-  let b:m_z = b:m_z + (b:m_z / 4)
-  let b:m_w = b:m_w + (b:m_w / 4)
-  return abs((b:m_z) + b:m_w)      " 32-bit result
+  let s:m_z = s:m_z + (s:m_z / 4)
+  let s:m_w = s:m_w + (s:m_w / 4)
+  return abs((s:m_z) + s:m_w)      " 32-bit result
 endfunction
 " end RNG }}}2
 
@@ -233,8 +233,8 @@ function! NewMaze(height, width)
 
   " print the grid, ready for playing
   function maze.Print()
-    call append('$',[''])
-    call map(self.grid, "append('$', join(v:val, ''))")
+    "call append('$',[''])
+    call map(copy(self.grid), "append('$', join(v:val, ''))")
   endfunction
 
   " TEST support{{{2
@@ -279,6 +279,30 @@ function! NewMaze(height, width)
   return maze
 endfunction " end Maze class }}}1
 "
+" Vimaze class {{{1
+function! NewVimaze()
+  let vimaze = {}
+
+  function vimaze.Setup(lifes, time, size) dict
+    let self.rules = {' ':'empty', '#':'wall'}
+    let self.lifes = a:lifes
+    let self.timer = a:time
+    let self.maze = NewMaze(a:size, a:size * 2)
+    call self.maze.Setup()
+    call self.maze.MakePath()
+    call self.maze.StartAndEnd()
+    call self.maze.Print()
+    call append(0,[''])
+    call self.SetHeader(a:lifes, a:time)
+  endfunction
+
+  function! vimaze.SetHeader(lifes, time) dict
+    call setline(1, 'Lifes: '.a:lifes.'   Timer: '.(a:time / 60).':'.(a:time % 60))
+  endfunction
+  echom string(vimaze)
+  return vimaze
+endfunction " end Vimaze class }}}1
+
 " Tests {{{1
 function! TestVimazing()
   let test = NewMaze(0,0)
@@ -290,11 +314,19 @@ endfunction " end Tests }}}1
 "
 " Public Interface {{{1
 function! Vimazing()
-  let maze = NewMaze(b:maze_height, b:maze_width)
-  call maze.Setup()
-  call maze.MakePath()
-  call maze.StartAndEnd()
-  call maze.Print()
+  if &filetype == 'vimaze'
+    normal! ggVGd
+  else
+    new
+    only
+    set ft=vimaze
+  endif
+  let b:vimaze = NewVimaze()
+  call b:vimaze.Setup(3,180,15)
+  "call b:vimaze.MakePath()
+  "call b:vimaze.StartAndEnd()
+  "call b:vimaze.Print()
+  set nomodified
 endfunction
 
 command! -nargs=0 Vimazing call Vimazing()
