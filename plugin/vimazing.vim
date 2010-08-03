@@ -309,30 +309,34 @@ function! NewVimaze()
   function vimaze.update()
     let self.rem_time += self.start_time - localtime()
     let self.start_time = localtime()
-    let key = getline('.')[col('.')-1]
-    let current = key == '' ? self.rules['out'] : self.rules[key]
-
     if self.rem_time <= 0
       call self.Setup(s:lifes, s:time, s:size)
       echo 'You lost on time! Try again.'
-    elseif self.lifes <= 0
-      call self.Setup(s:lifes, s:time, s:size)
-      echo 'You lost all your lives! Try again.'
-    else
+    endif
+    let key = getline('.')[col('.')-1]
+    if has_key(self.rules, key)
+      let current = self.rules[key]
       if current == 'door'
         echo 'Start!'
       elseif current == "empty"
         echo 'Good!'
       elseif current == 'wall'
         let self.lifes -= 1
-        echo "Too bad! You hit the wall, start from the beginning :("
-        call setpos('.', [0,3,2,0])
+        echo "Too bad! You hit the wall."
+        call self.resetcursor()
       elseif current == 'out'
         echo "You should go the other way."
-        call setpos('.', [0,3,2,0])
+        call self.resetcursor()
       else
         echoe 'If you see this, the world''s about to end, save yourself!'
       endif
+    else
+      echoe 'You shouldn''t be there!'
+      call self.resetcursor()
+    endif
+    if self.lifes < 0
+      call self.Setup(s:lifes, s:time, s:size)
+      echo 'You lost all your lives! Try again.'
     endif
     call b:vimaze.SetHeader(self.lifes, self.rem_time)
   endfunction
@@ -343,15 +347,23 @@ function! NewVimaze()
   endfunction
 
   function vimaze.activate() dict
-    call setpos('.', [0,3,2,0])
+    call self.resetcursor()
     call setline(line('$'), 'Press <Esc> to stop.')
     let self.start_time = localtime()
     augroup Vimazing
       au!
       au CursorMoved,CursorHold * call b:vimaze.update()
-      au InsertEnter * silent normal! <Esc>
+      au InsertEnter * exec "silent normal! \<Esc>"
     augroup END
     noremap <Esc> :call b:vimaze.deactivate()<CR>
+    "for key in ["\<Left>", "\<Right>", "\<Up>", "\<Down>", "\<CR>"]
+      "execute "noremap <buffer> ".key." \<Nop>"
+      "echom key
+    "endfor
+    noremap <Left> <Nop>
+    noremap <Right> <Nop>
+    noremap <Up> <Nop>
+    noremap <Down> <Nop>
     noremap j gj
     noremap k gk
   endfunction
@@ -365,7 +377,9 @@ function! NewVimaze()
   endfunction
 
   function vimaze.resetcursor()
-    call setpos('.', [0,self.doors[0][0] + 1,self.doors[0][1] + 1,0])
+    call setpos('.', [0,3,1,0])
+    normal fX
+
   endfunction
 
   return vimaze
