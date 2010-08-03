@@ -115,15 +115,6 @@ function! NewMaze(height, width)
     endfor
   endfunction
 
-  " ready to play - position the cursor at the start
-  function maze.Start() dict
-    " the header stuff here is purely an example at this stage
-    call setline(1, '        -= Vimazing =-')
-    call setline(2, 'Lives: 3    Time remaining: 90')
-    call cursor(3,1)
-    call search(' ')
-  endfunction
-
   " Create a path through the maze to be followed
   function maze.MakePath() dict
     " pick a random cell inside the grid (not on the outside walls)
@@ -295,8 +286,6 @@ function! NewVimaze()
   let vimaze = {}
 
   function vimaze.Setup(lifes, time, size) dict
-    "FIXME normal! gg"_dG
-    "normal! ggVG"_d
     normal! gg"_dG
     call self.deactivate()
     let self.rules = {'X':'door', ' ':'empty', '#':'wall', 'out':'out'}
@@ -308,7 +297,7 @@ function! NewVimaze()
     call self.maze.MakePath()
     call self.maze.StartAndEnd()
     call self.maze.Print()
-    call append(0,[''])  " FIXME: don't need array here...
+    call append(0,'')
     call self.SetHeader(a:lifes, a:time)
     call cursor(1,1)
     call search('X')
