@@ -301,6 +301,7 @@ function! NewVimaze()
     call self.SetHeader(a:lifes, a:time)
     call cursor(1,1)
     call search('X')
+    source syntax/vimazing.vim  " just for now
     call append(line('$'), ['Press "g" to start.'])
     noremap g :call b:vimaze.activate()<CR>
   endfunction
@@ -330,7 +331,7 @@ function! NewVimaze()
         echo "You should go the other way."
         call setpos('.', [0,3,2,0])
       else
-        echoe 'If you see this, the world']s about to end, save yourself!'
+        echoe 'If you see this, the world''s about to end, save yourself!'
       endif
     endif
     call b:vimaze.SetHeader(self.lifes, self.rem_time)
@@ -338,7 +339,7 @@ function! NewVimaze()
 
   function vimaze.SetHeader(lifes, time) dict
     call setline(1, 'Lifes: '.a:lifes.'   Timer: '.(a:time / 60).':'.(a:time % 60))
-    set nomodified
+    set buftype=nofile
   endfunction
 
   function vimaze.activate() dict
@@ -360,7 +361,7 @@ function! NewVimaze()
     augroup Vimazing
       au!
     augroup END
-    unmap <Esc>
+    silent! unmap <Esc>
   endfunction
 
   function vimaze.resetcursor()
@@ -382,7 +383,7 @@ endfunction " end Tests }}}1
 " Public Interface {{{1
 function! Vimazing()
   if &filetype == 'vimazing'
-    normal! ggVGd
+    normal! ggdG
   else
     new
     only
@@ -390,7 +391,6 @@ function! Vimazing()
   endif
   let b:vimaze = NewVimaze()
   call b:vimaze.Setup(s:lifes, s:time, s:size)
-  set nomodified
 endfunction
 
 command! -nargs=0 Vimazing call Vimazing()

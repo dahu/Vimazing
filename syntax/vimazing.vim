@@ -11,9 +11,9 @@ syn sync fromstart
 set guicursor=a:blinkon0
 
 hi def vimazingWall      ctermfg=Black ctermbg=Black guifg=Black guibg=Black
-hi def vimazingOpenSpace ctermfg=White ctermbg=White guifg=White guibg=White
-hi Cursor                ctermfg=Magenta ctermbg=Magenta guifg=NONE guibg=Magenta
-hi lCursor               ctermfg=Magenta ctermbg=Magenta guifg=NONE guibg=Magenta
+"hi def vimazingOpenSpace ctermfg=White ctermbg=White guifg=White guibg=White
+hi Cursor                guifg=NONE guibg=Magenta
+hi lCursor               guifg=NONE guibg=Magenta
 hi def vimazingObject    ctermfg=LightBlue ctermbg=White guifg=LightBlue guibg=White
 hi def vimazingText      ctermfg=DarkBlue ctermbg=White guifg=DarkBlue guibg=White
 
