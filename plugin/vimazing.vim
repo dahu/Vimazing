@@ -28,7 +28,7 @@ let s:old_cpo = &cpo
 set cpo&vim
 
 " Configuration Options {{{1
-let s:size = 20
+let s:size = 10 " XXX easier to start at that size.
 let s:lifes = 3
 let s:time = 120
 
@@ -149,7 +149,7 @@ function! NewMaze(height, width)
     let done_end = 0
     while ! done_end
       if self.grid[cell.h()][cell.w()] == ' '
-        let self.grid[cell.h() + 1][cell.w()] = 'X'
+        let self.grid[cell.h() + 1][cell.w()] = '+'
         let done_end = 1
       endif
       call cell.add([0,-1])
@@ -210,7 +210,6 @@ function! NewMaze(height, width)
     endwhile
     if len(tries) == 5
       " no further steps can be taken along current path
-      " XXX abort for now to test single path creation
       return -1
     else
       return 0
@@ -282,106 +281,140 @@ function! NewMaze(height, width)
 endfunction " end Maze class }}}1
 "
 " Vimaze class {{{1
-function! NewVimaze()
+function! NewVimaze(lifes, time, size)
   let vimaze = {}
+  let vimaze.lifes = a:lifes
+  let vimaze.time  = a:time
+  let vimaze.size  = a:size
+  let vimaze.rules = {'X':'start', '+':'end', ' ':'empty', '#':'wall', 'out':'out'}
+  let vimaze.paused = 0
+  let vimaze.pos = []
 
-  function vimaze.Setup(lifes, time, size) dict
-    normal! gg"_dG
-    call self.deactivate()
-    let self.rules = {'X':'door', ' ':'empty', '#':'wall', 'out':'out'}
-    let self.lifes = a:lifes
-    let self.rem_time = a:time
-    let self.start_time = 0
-    let self.maze = NewMaze(a:size, a:size * 2)
+  function vimaze.Setup() dict
+    let self.rem_lifes = self.lifes
+    let self.rem_time = self.time
+    let self.prev_time = 0
+    let self.size = self.size
+    let self.maze = NewMaze(self.size, self.size * 2)
     call self.maze.Setup()
     call self.maze.MakePath()
     call self.maze.StartAndEnd()
-    call self.maze.Print()
-    call append(0,'')
-    call self.SetHeader(a:lifes, a:time)
-    call cursor(1,1)
-    call search('X')
-    source syntax/vimazing.vim  " just for now
-    call append(line('$'), ['Press "g" to start.'])
-    noremap g :call b:vimaze.activate()<CR>
+    call self.Print('Press <Space> to start.')
+    source syntax/vimazing.vim  " just for now XXX you need pathogen :p
+    call self.ResetCursor()
+    let self.prev_time = localtime()
+    " Disable cheating mouse:
+    set mouse=
+    augroup Vimazing
+      au!
+    augroup END
+    noremap <buffer> <space> :silent call b:vimaze.Pause()<CR><Esc>
+      for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
+        execute "silent! unmap <buffer> ".key
+      endfor
+    silent $s/^.*$/Press <Space> to start./
+    exec 'silent 3;+'. (self.size - 1).'s/[^X]/#/g'
+    let self.paused = 1
+    call self.ResetCursor()
   endfunction
 
-  function vimaze.update()
-    let self.rem_time += self.start_time - localtime()
-    let self.start_time = localtime()
+  function vimaze.Update() dict
+    let msg = []
+    let self.rem_time += self.prev_time - localtime()
+    let self.prev_time = localtime()
     if self.rem_time <= 0
-      call self.Setup(s:lifes, s:time, s:size)
-      echo 'You lost on time! Try again.'
+      call self.Setup()
+      call add(msg, 'You lost on time! Try again.')
     endif
     let key = getline('.')[col('.')-1]
     if has_key(self.rules, key)
       let current = self.rules[key]
-      if current == 'door'
-        echo 'Start!'
+      if current == 'start'
+        call add(msg, 'Start!')
+      elseif current == 'end'
+        let  self.size += 5
+        let self.time += 15
+        call self.Setup()
+        call add(msg, 'You finished! Now attack this one.')
       elseif current == "empty"
-        echo 'Good!'
+        call add(msg, 'Good')
       elseif current == 'wall'
-        let self.lifes -= 1
-        echo "Too bad! You hit the wall."
-        call self.resetcursor()
+        let self.rem_lifes -= 1
+        call add(msg, 'Too bad! You hit the wall.')
+        call self.ResetCursor()
       elseif current == 'out'
-        echo "You should go the other way."
-        call self.resetcursor()
       else
-        echoe 'If you see this, the world''s about to end, save yourself!'
+        call add(msg, 'If you see this, the world''s about to end, save yourself!')
       endif
+    elseif key != ''
+      echoe 'That shouldn''t be there!: '.key.', pos: ('.line('.').','.col('.').')'
+      call self.ResetCursor()
     else
-      echoe 'You shouldn''t be there!'
-      call self.resetcursor()
+        call add(msg, 'You should go the other way.')
+        call self.ResetCursor()
     endif
-    if self.lifes < 0
-      call self.Setup(s:lifes, s:time, s:size)
-      echo 'You lost all your lives! Try again.'
+    if self.rem_lifes < 0
+      call self.Setup()
+      call add(msg, 'You lost all your lives! Try again.')
     endif
-    call b:vimaze.SetHeader(self.lifes, self.rem_time)
+    call self.SetHeader()
+    echo join(msg, "\n")
   endfunction
 
-  function vimaze.SetHeader(lifes, time) dict
-    call setline(1, 'Lifes: '.a:lifes.'   Timer: '.(a:time / 60).':'.(a:time % 60))
+  function vimaze.Pause() dict
+    noremap <space> :silent call b:vimaze.Pause()<CR><Esc>
+    if self.paused
+      let self.prev_time = localtime()
+      call self.Print('Press <Space> to pause.')
+      augroup Vimazing
+        au!
+        au CursorMoved,CursorHold *
+              \ if &filetype == 'vimazing' |
+              \   call b:vimaze.Update() |
+              \ endif
+      augroup END
+      for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
+        execute "noremap <buffer> ".key." <Nop>"
+      endfor
+      call setpos('.', self.pos)
+      let self.paused = 0
+      echo 'Game paused.'
+    else
+      let self.pos = getpos('.')
+      augroup Vimazing
+        au!
+      augroup END
+      for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
+        execute "unmap <buffer> ".key
+      endfor
+      call self.Print('Press <Space> to pause.')
+      exec 'silent 3;+'. (self.size - 1).'s/[^X]/#/g'
+      let self.paused = 1
+      $s/Press.*$/Press <Space> to continue./
+      call self.ResetCursor()
+      echo 'Go ahead!'
+    endif
+  endfunction
+
+  function vimaze.Print(msg) dict
+    silent %d
+    call self.maze.Print()
+    call append(0,'')
+    call self.SetHeader()
+    call append(line('$'), [a:msg])
+  endfunction
+
+  function vimaze.ResetCursor() dict
+    call search('X', 'cw')
+    nohlsearch
+  endfunction
+
+  function vimaze.SetHeader() dict
+    call setline(1, 'Lifes: '.self.rem_lifes.'   Timer: '.(self.rem_time / 60).':'.(self.rem_time % 60 > 9 ? self.rem_time % 60 : '0' . self.rem_time % 60))
     set buftype=nofile
   endfunction
 
-  function vimaze.activate() dict
-    call self.resetcursor()
-    call setline(line('$'), 'Press <Esc> to stop.')
-    let self.start_time = localtime()
-    augroup Vimazing
-      au!
-      au CursorMoved,CursorHold * call b:vimaze.update()
-      au InsertEnter * exec "silent normal! \<Esc>"
-    augroup END
-    noremap <Esc> :call b:vimaze.deactivate()<CR>
-    "for key in ["\<Left>", "\<Right>", "\<Up>", "\<Down>", "\<CR>"]
-      "execute "noremap <buffer> ".key." \<Nop>"
-      "echom key
-    "endfor
-    noremap <Left> <Nop>
-    noremap <Right> <Nop>
-    noremap <Up> <Nop>
-    noremap <Down> <Nop>
-    noremap j gj
-    noremap k gk
-  endfunction
-
-  function vimaze.deactivate() dict
-    silent echo line('$') > 4 ? setline(line('$'), 'Press "g" to start.') : line('.')
-    augroup Vimazing
-      au!
-    augroup END
-    silent! unmap <Esc>
-  endfunction
-
-  function vimaze.resetcursor()
-    call setpos('.', [0,3,1,0])
-    normal fX
-
-  endfunction
-
+  call vimaze.Setup()
   return vimaze
 endfunction " end Vimaze class }}}1
 
@@ -403,8 +436,7 @@ function! Vimazing()
     only
     set ft=vimazing
   endif
-  let b:vimaze = NewVimaze()
-  call b:vimaze.Setup(s:lifes, s:time, s:size)
+  let b:vimaze = NewVimaze(s:lifes, s:time, s:size)
 endfunction
 
 command! -nargs=0 Vimazing call Vimazing()
@@ -418,4 +450,3 @@ let &cpo = s:old_cpo
 " vim: set sw=2 sts=2 et fdm=marker:
 
 finish
-
