@@ -15,6 +15,15 @@
 "
 " Licensed under the same terms as Vim itself.
 " ============================================================================
+
+" Create the command and wait until the rest is needed (as per 41.14).
+if !exists("s:did_load")
+  command! -nargs=0 Vimazing call Vimazing()
+  let s:did_load = 1
+  exe 'au FuncUndefined Vimazing* source ' . expand('<sfile>')
+  finish
+endif
+
 let s:Vimazing_version = '0.0.1'  " alpha, unreleased
 
 " TODO
@@ -438,8 +447,6 @@ function! Vimazing()
   endif
   let b:vimaze = NewVimaze(s:lifes, s:time, s:size)
 endfunction
-
-command! -nargs=0 Vimazing call Vimazing()
 
 " end Public Interface }}}1
 "
