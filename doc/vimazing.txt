@@ -17,7 +17,7 @@ quickly have you moving Vim style like you've been Vimming since the 70's.
 GAME PLAY                                        *vimazing-gameplay*
 
 Use your hjkl keys to navigate the maze. You will start at the top of the maze
-on the X. Your goal is to move through the maze to the X at the bottom.  Be
+on the X. Your goal is to move through the maze to the + at the bottom.  Be
 careful, though! If you hit a wall or stumble into a trap, you will lose a
 life and have to restart the maze from the beginning! But don't dawdle because
 you're on the clock! If you don't finish the maze in time, it's lights out for

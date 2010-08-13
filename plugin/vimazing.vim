@@ -1,8 +1,9 @@
 " ============================================================================
 " File:   vimazing - A typing trainer, Vim style.
 " Description: A game to train the normal mode movements in Vim
-" Author:      Barry Arthur <barry.arthur at gmail dot com>
-" Last Change: 22 July, 2010
+" Authors:     Barry Arthur <barry dot arthur at gmail dot com>
+"              Israel Chauca <israelchauca at gmail dot com>
+" Last Change: 14 August, 2010
 " Website:     http://github.com/dahu/VimLint
 " Credits:
 " * #vim user, brah, gave me the idea by asking for it one day
@@ -15,7 +16,15 @@
 "
 " Licensed under the same terms as Vim itself.
 " ============================================================================
+let s:Vimazing_version = '0.0.2'  " alpha, playable
 
+" History:{{{1
+" v.0.0.2 changes:
+" * using Vim's quickload feature. (Raimondi)
+" v.0.0.1 initial release:
+" * playable with increasing level difficulty
+"
+" Quickloader:{{{1
 " Create the command and wait until the rest is needed (as per 41.14).
 if !exists("s:did_load")
   command! -nargs=0 Vimazing call Vimazing()
@@ -23,15 +32,7 @@ if !exists("s:did_load")
   exe 'au FuncUndefined Vimazing* source ' . expand('<sfile>')
   finish
 endif
-
-let s:Vimazing_version = '0.0.1'  " alpha, unreleased
-
-" TODO
-" Pick (and remove) a random place in the maze.opened_cells list and start the
-" path crawling again. Lather, Rinse, Repeat until opened_cells is empty - and
-" the maze is complete.
-" THEN, release to github as 0.0.1 - Day of Vimazement. :D
-
+"
 " Vimscript setup {{{1
 let s:old_cpo = &cpo
 set cpo&vim

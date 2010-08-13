@@ -22,7 +22,7 @@ syn match vimazingText +^[^#].\++
 
 syn region vimazingMaze start=+^#+ end=+\n\ze[^#]+ contains=vimazingObject,vimazingWall,vimazingOpenSpace
 syn match vimazingWall +#+ contained
-syn match vimazingOpenSpace + + contained
+"syn match vimazingOpenSpace + + contained
 syn match vimazingObject +[^ #]+ contained
 
 let b:current_syntax = "vimazing"
