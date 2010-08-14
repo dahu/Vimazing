@@ -372,7 +372,7 @@ function! NewVimaze(lifes, time, size)
   endfunction
 
   function vimaze.Pause() dict
-    noremap <space> :silent call b:vimaze.Pause()<CR><Esc>
+    noremap <buffer> <space> :silent call b:vimaze.Pause()<CR><Esc>
     if self.paused
       let self.prev_time = localtime()
       call self.Print('Press <Space> to pause.')
