@@ -289,6 +289,9 @@ function! NewMaze(height, width)
 
   return maze
 endfunction " end Maze class }}}1
+
+let s:root = expand('<sfile>:h:h')
+
 "
 " Vimaze class {{{1
 function! NewVimaze(lifes, time, size)
@@ -310,7 +313,8 @@ function! NewVimaze(lifes, time, size)
     call self.maze.MakePath()
     call self.maze.StartAndEnd()
     call self.Print('Press <Space> to start.')
-    source syntax/vimazing.vim  " just for now XXX you need pathogen :p
+    " just for now XXX you need pathogen :p
+    exec 'source '.s:root.'/syntax/vimazing.vim'
     call self.ResetCursor()
     let self.prev_time = localtime()
     " Disable cheating mouse:

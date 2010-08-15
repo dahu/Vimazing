@@ -53,6 +53,20 @@ Some people may find this game so addictive that they forget to eat. Please,
 set an alarm clock, or have a responsible adult supervise your Vimazing
 sessions.
 
+Cheating ~
+
+Very little effort has been made to make Vimazing cheat-prrof. Indeed,
+learning to cheat is a -goal- in Vimazing.
+If you start "jumping through walls" by using 3j , 3l , t# and such to make
+your life easier then, congratulations, you've graduated from Vimazing! You
+should now move on and start reading |motion.txt|. :)
+
+If you start writing mappings like this: >
+  map <F2> <space>/+<cr>
+< ( space starts maze, /+<cr> makes cursor jump to the goal finishing the maze)
+then find something else to do. Of course, you -could- see how amazing the
+larger mazes look...
+
 Safety First ~
 
 * Not suitable for people over the age of Serious.
