@@ -314,14 +314,15 @@ function! NewVimaze(lifes, time, size)
     call self.maze.StartAndEnd()
     call self.Print('Press <Space> to start.')
     " just for now XXX you need pathogen :p
-    exec 'source '.s:root.'/syntax/vimazing.vim'
+    "exec 'source '.s:root.'/syntax/vimazing.vim'
     call self.ResetCursor()
     let self.prev_time = localtime()
     " Disable cheating mouse:
     set mouse=
-    augroup Vimazing
-      au!
-    augroup END
+    "augroup Vimazing
+      "au!
+    "augroup END
+    call self.ClearAutoCommands()
     noremap <buffer> <space> :silent call b:vimaze.Pause()<CR><Esc>
       for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
         execute "silent! unmap <buffer> ".key
@@ -330,6 +331,31 @@ function! NewVimaze(lifes, time, size)
     exec 'silent 3;+'. (self.size - 1).'s/[^X]/#/g'
     let self.paused = 1
     call self.ResetCursor()
+  endfunction
+
+  function vimaze.ClearAutoCommands()
+    augroup Vimazing
+      au!
+    augroup END
+    call self.SyntaxHighlightAutoCommands()
+  endfunction
+
+  function vimaze.SyntaxHighlightAutoCommands()
+    augroup Vimazing
+      au BufEnter <buffer> exec 'source '.s:root.'/syntax/vimazing.vim'
+      au BufLeave <buffer> exec 'colors '.b:colors_name
+    augroup END
+  endfunction
+
+  function vimaze.SetupAutoCommands()
+    augroup Vimazing
+      au!
+      au CursorMoved,CursorHold <buffer>
+            \ if &filetype == 'vimazing' |
+            \   call b:vimaze.Update() |
+            \ endif
+    augroup END
+    call self.SyntaxHighlightAutoCommands()
   endfunction
 
   function vimaze.Update() dict
@@ -364,8 +390,8 @@ function! NewVimaze(lifes, time, size)
       echoe 'That shouldn''t be there!: '.key.', pos: ('.line('.').','.col('.').')'
       call self.ResetCursor()
     else
-        call add(msg, 'You should go the other way.')
-        call self.ResetCursor()
+      call add(msg, 'You should go the other way.')
+      call self.ResetCursor()
     endif
     if self.rem_lifes < 0
       call self.Setup()
@@ -380,13 +406,14 @@ function! NewVimaze(lifes, time, size)
     if self.paused
       let self.prev_time = localtime()
       call self.Print('Press <Space> to pause.')
-      augroup Vimazing
-        au!
-        au CursorMoved,CursorHold *
-              \ if &filetype == 'vimazing' |
-              \   call b:vimaze.Update() |
-              \ endif
-      augroup END
+      "augroup Vimazing
+        "au!
+        "au CursorMoved,CursorHold *
+              "\ if &filetype == 'vimazing' |
+              "\   call b:vimaze.Update() |
+              "\ endif
+      "augroup END
+      call self.SetupAutoCommands()
       for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
         execute "noremap <buffer> ".key." <Nop>"
       endfor
@@ -395,9 +422,10 @@ function! NewVimaze(lifes, time, size)
       echo 'Game paused.'
     else
       let self.pos = getpos('.')
-      augroup Vimazing
-        au!
-      augroup END
+      "augroup Vimazing
+        "au!
+      "augroup END
+      call self.ClearAutoCommands()
       for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
         execute "unmap <buffer> ".key
       endfor
@@ -448,6 +476,10 @@ function! Vimazing()
   else
     new
     only
+    let b:colors_name = 'default'
+    if exists('g:colors_name')
+      let b:colors_name = g:colors_name
+    endif
     set ft=vimazing
   endif
   let b:vimaze = NewVimaze(s:lifes, s:time, s:size)
