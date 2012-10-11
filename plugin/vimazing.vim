@@ -313,15 +313,10 @@ function! NewVimaze(lifes, time, size)
     call self.maze.MakePath()
     call self.maze.StartAndEnd()
     call self.Print('Press <Space> to start.')
-    " just for now XXX you need pathogen :p
-    "exec 'source '.s:root.'/syntax/vimazing.vim'
     call self.ResetCursor()
     let self.prev_time = localtime()
     " Disable cheating mouse:
     set mouse=
-    "augroup Vimazing
-      "au!
-    "augroup END
     call self.ClearAutoCommands()
     noremap <buffer> <space> :silent call b:vimaze.Pause()<CR><Esc>
       for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
@@ -406,13 +401,6 @@ function! NewVimaze(lifes, time, size)
     if self.paused
       let self.prev_time = localtime()
       call self.Print('Press <Space> to pause.')
-      "augroup Vimazing
-        "au!
-        "au CursorMoved,CursorHold *
-              "\ if &filetype == 'vimazing' |
-              "\   call b:vimaze.Update() |
-              "\ endif
-      "augroup END
       call self.SetupAutoCommands()
       for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
         execute "noremap <buffer> ".key." <Nop>"
@@ -422,9 +410,6 @@ function! NewVimaze(lifes, time, size)
       echo 'Game paused.'
     else
       let self.pos = getpos('.')
-      "augroup Vimazing
-        "au!
-      "augroup END
       call self.ClearAutoCommands()
       for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<CR>", "a", "A", "i", "I", "o", "O"]
         execute "unmap <buffer> ".key
