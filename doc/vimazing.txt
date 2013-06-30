@@ -55,7 +55,7 @@ sessions.
 
 Cheating ~
 
-Very little effort has been made to make Vimazing cheat-prrof. Indeed,
+Very little effort has been made to make Vimazing cheat-proof. Indeed,
 learning to cheat is a -goal- in Vimazing.
 If you start "jumping through walls" by using 3j , 3l , t# and such to make
 your life easier then, congratulations, you've graduated from Vimazing! You
